@@ -13,33 +13,41 @@ Rule:
 
 
 class OneToN:
-    def __init__(self, init_positon=0, n_position=10, max_move=2):
-        self.curr_positon = init_positon
+    def __init__(self, init_position=0, n_position=10, max_move=2):
+        self.curr_position = init_position
         self.n_position = n_position
         self.max_move = max_move
-        self.goal_position = range(n_position % (max_move + 1), n_position + 1, max_move + 1)
-
-    def solve(self, p):
-        if p in self.goal_position:
-            return "LOSE"
-        else:
-            return "WIN"
 
     def do_move(self, m):
-        self.curr_positon += m
+        self.curr_position += m
 
     def gen_move(self, p):
         return range(1, min(self.max_move + 1, self.n_position - p + 1))
 
     def primitive(self, p):
         if self.is_primitive(p):
-            return self.solve(p)
+            return "LOSE"
         else:
             print("This position is not primitive.")
 
     def is_primitive(self, p):
         return p == self.n_position
 
+
+class Solver:
+    def __init__(self):
+        pass
+
+    def solve(self, p, game):
+        if game.is_primitive(p):
+            return p, game.primitive(p)
+        else:
+            children = [p + m for m in game.gen_move(p)]  # positions of p's children
+            values = [self.solve(child, game)[1] for child in children]
+            if all(value == "WIN" for value in values):  # all children are WIN
+                return p, "LOSE",
+            elif "LOSE" in values:  # there exists at least 1 LOSE
+                return p, "WIN"
 
 if __name__ == '__main__':
     """
@@ -80,20 +88,25 @@ if __name__ == '__main__':
     Game over
     """
 
-    game = OneToN(init_positon=0, n_position=10, max_move=2)
+    game = OneToN(init_position=0, n_position=10, max_move=2)
 
-    while not game.is_primitive(game.curr_positon):
-        print("\nCurrent position: %i" % game.curr_positon)
-        print("At current position, you will %s. (If each player moves perfectly.)" % game.solve(game.curr_positon))
+    solver = Solver()
+
+    for i in range(game.n_position + 1): print(solver.solve(i, game))    # show the value of each position
+
+    while not game.is_primitive(game.curr_position):
+        print("\nCurrent position: %i" % game.curr_position)
+        print("At current position, you will %s. (If each player moves perfectly.)" %
+              solver.solve(game.curr_position, game)[1])
         while True:
             try:
                 m = int(input('Please give an available move: '))
             except:
                 m = 0
-            if m in game.gen_move(game.curr_positon):
+            if m in game.gen_move(game.curr_position):
                 break
         game.do_move(m)
 
-    print("\nCurrent position: %i" % game.curr_positon)
-    print("At current position, you %s." % game.primitive(game.curr_positon))
+    print("\nCurrent position: %i" % game.curr_position)
+    print("At current position, you %s." % game.primitive(game.curr_position))
     print("Game over")
