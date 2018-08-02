@@ -10,9 +10,14 @@ Rule:
 This file contain the basic rule of the game, and static information.
 Dynamic information of the game are kept in Player.py
 '''
+# You can change the parameters in the following
+INIT_POSITION = 0
+N_POSITION = 10
+MAX_MOVE = 2
+START_PLAYER = 0
 
 class OneToN:
-    def __init__(self, init_position=0, n_position=10, max_move=2, start_player=0):
+    def __init__(self, init_position=INIT_POSITION, n_position=N_POSITION, max_move=MAX_MOVE, start_player=START_PLAYER):
         self.init_position = init_position
         self.n_position = n_position
         self.max_move = max_move

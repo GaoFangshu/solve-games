@@ -5,8 +5,14 @@ Game:
 
 Rule:
     pass
+
 '''
 import copy
+# You can change the parameters in the following
+INIT_POSITION = (0, 0)
+N = 15
+MAX_MOVE = 3
+START_PLAYER = 0
 
 class OddOrEven:
     class Position:
@@ -25,7 +31,7 @@ class OddOrEven:
         def __eq__(self, other):
             return self.__hash__() == other.__hash__()
 
-    def __init__(self, init_position=(0, 0), n=15, max_move=3, start_player=0):
+    def __init__(self, init_position=INIT_POSITION, n=N, max_move=MAX_MOVE, start_player=START_PLAYER):
         self.init_position = self.Position(list(init_position), start_player)
         self.n = n
         self.max_move = max_move
