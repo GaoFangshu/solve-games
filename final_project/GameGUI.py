@@ -1,6 +1,28 @@
 import tkinter as tk
 from tkinter import ttk
 
+"""
+Layout:
++---------------------GameGUI---------------------+
+| +------------------GameBoard------------------+ |
+| | +-PLayerInfo1-+ +--Board--+ +-PLayerInfo1-+ | |
+| | |             | |         | |             | | |
+| | |             | |         | |             | | |
+| | |             | |         | |             | | |
+| | +-------------+ +---------+ +-------------+ | |
+| +---------------------------------------------+ |
+| +------------------Settings_------ ------------+ |
+| | +------Player1------+ +------Player1------+ | |
+| | | * Computer        | | * Computer        | | |
+| | | * Human name      | | * Human name      | | |
+| | +-------------------+ +-------------------+ | |
+| | +---Prediction----------------------------+ | |
+| | | * Show value and remoteness             | | |
+| | +-----------------------------------------+ | |
+| +---------------------------------------------+ |
++-------------------------------------------------+
+"""
+
 class GameGUI:
     def __init__(self):
         self.window = tk.Tk()
@@ -81,14 +103,14 @@ class PlayerInfo:
 
 
 class Settings:
-    def __init__(self):
+    def __init__(self, master ):
         pass
 
-class OnePlayer:
-    def __init__(self, master, name):
-        self.board_frame = ttk.LabelFrame(master, text=name)
+class PlayerSettings:
+    def __init__(self):
 
 
+class ValueSettings:
 
 if __name__ == '__main__':
     game_gui = GameGUI()
