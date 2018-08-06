@@ -125,7 +125,7 @@ class MainEnv:
             game.print_current_position(self.curr_position)
             print("it's %s's turn." % self.players[self.turn].name)
 
-            self.players[self.turn].do_player_move(main_env=self)
+            self.players[self.turn].do_player_move(env=self)
             if not game.is_primitive(self.curr_position):
                 self.turn ^= 1
             else:

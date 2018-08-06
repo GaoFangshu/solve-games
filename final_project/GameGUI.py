@@ -1,6 +1,15 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import math
+from final_project import Env
+import argparse
+
+parser = argparse.ArgumentParser(description='Game Player')
+parser.add_argument('-g', '--game_name', choices=["Isolation"], default='Isolation', help='the game name, only "Isolation" for now')
+parser.add_argument('-r', '--row', type=int, default=4, help='number of rows of gameboard')
+parser.add_argument('-c', '--column', type=int, default=4, help='number of columns of gameboard')
+parser.add_argument('-d', '--database_name', default=None,  help='filename of the database file')
+args = parser.parse_args()
 
 """
 Layout:
@@ -26,31 +35,35 @@ Layout:
 
 IMG_SLOT_TRUE = "Leaf.png"
 IMG_SLOT_FALSE = "Water.png"
-IMG_BLACK_PIECE = "Frog_0.png"
-IMG_WHITE_PIECE = "Frog_1.png"
-
-SLOT_WIDTH = 18
-SLOT_HEIGHT = 8
+IMG_SLOT_VALID = "Leaf_valid.png"
+IMG_PIECE_0 = "Frog_0.png"
+IMG_PIECE_1 = "Frog_1.png"
 
 class GameGUI:
-    def __init__(self):
+    def __init__(self, board_row, board_col):
+        self.env = Env.Env(game_name=args.game_name, board_row=board_row, board_col=board_col)
+
         self.window = tk.Tk()
-        self.game_board = GameBoard(master=self.window)  # TODO: control board_row and board_col
+        self.game_board = GameBoard(master=self.window, board_row=board_row, board_col=board_col, env=self.env)
         self.game_board.frame.grid(row=0, column=0)
 
         self.settings = Settings(master=self.window)
         self.settings.frame.grid(row=1, column=0)
 
+
+        # self.game = Game.Game(board_row=board_row, board_col=board_row)
+
     def run(self):
+        #self.p1_choice = self.settings.player1.type
+        #self.p2_choice = self.settings.player2.type
         self.window.mainloop()
 
-
 class GameBoard:
-    def __init__(self, master, board_row=4, board_col=4):
+    def __init__(self, master, board_row, board_col, env):
         # self.master = master
         self.frame = ttk.LabelFrame(master, text="Game Board")
 
-        self.board = Board(self.frame, board_row=board_row, board_col=board_col)
+        self.board = Board(self.frame, board_row=board_row, board_col=board_col, env=env)
         self.board.frame.grid(row=0, column=1)
 
         self.players = {}  # TODO: to GUI
@@ -64,10 +77,23 @@ class GameBoard:
 
 
 class Board:
-    def __init__(self, master, board_row, board_col):
+    def __init__(self, master, board_row, board_col, env):
+        self.env=env
         self.frame = ttk.LabelFrame(master)
         self.board_row = board_row
         self.board_col = board_col
+
+        self.img_slot_true = tk.PhotoImage(file=IMG_SLOT_TRUE)
+        self.img_slot_false = tk.PhotoImage(file=IMG_SLOT_FALSE)
+        self.img_piece_0 = tk.PhotoImage(file=IMG_PIECE_0)
+        self.img_piece_1 = tk.PhotoImage(file=IMG_PIECE_1)
+        self.img_slot_valid = tk.PhotoImage(file=IMG_SLOT_VALID)
+
+        self.dict_img = {0: self.img_slot_false,
+                         1: self.img_slot_true,
+                         2: self.img_piece_0,
+                         3: self.img_piece_1}    # values to images
+
         self.slots = {}
         self.pieces = {}
         self.init_board()
@@ -80,18 +106,35 @@ class Board:
                 self.slots[r, c, 0].grid(row=r, column=c)
                 self.slots[r, c, 0].pack_propagate(False)  # don't shrink
 
-                slot_true = tk.PhotoImage(file=IMG_SLOT_TRUE)
-                self.slots[r, c, 1] = tk.Button(self.slots[r, c, 0], state="disabled", bg="white", fg="white", justify="center", bd=0, image=slot_true)
-                self.slots[r, c, 1].image = slot_true
+                self.slots[r, c, 1] = tk.Button(self.slots[r, c, 0], state="normal", bg="white", fg="white", justify="center", bd=0, image=self.img_slot_true)
+                self.slots[r, c, 1].image = self.img_slot_true
                 self.slots[r, c, 1].pack(fill="both", expand=True)
 
-    def init_piece(self):
-        piece0 = tk.PhotoImage(file=IMG_BLACK_PIECE)
-        piece1 = tk.PhotoImage(file=IMG_WHITE_PIECE)
-        self.pieces = [piece0, piece1]
+    def show_position(self, p):
+        for r in p:
+            for c in r:
+                self.slots[r, c, 1].image = self.dict_img[c]
 
-        self.slots[0, math.ceil(self.board_col / 2.0) - 1, 1].config(image=self.pieces[0])  # black
-        self.slots[self.board_row - 1, math.floor(self.board_col / 2.0), 1].config(image=self.pieces[1])  # white
+    def init_piece(self):
+        row_piece0 = 0
+        col_piece0 = math.ceil(self.board_col / 2.0) - 1
+        row_piece1 = self.board_row - 1
+        col_piece1 = math.floor(self.board_col / 2.0)
+
+        self.slots[row_piece0, col_piece0, 1].config(image=self.img_piece_0,
+                                                                     state="normal",
+                                                                     command=lambda: self.show_valid_slot(row_piece0, col_piece0, piece=0))  # for player 1
+        self.slots[row_piece1, col_piece1, 1].config(image=self.img_piece_1, state="normal",
+                                                                     command=lambda: self.show_valid_slot(row_piece1, col_piece1, piece=1))  # for player 2
+
+    def show_valid_slot(self, row, col, piece):
+        if self.env.turn[0] == piece:
+            current_position = self.env.curr_position
+            valid_slots = self.env.game.gen_valid_index(row=row, col=col, p=current_position)
+            for s in valid_slots:
+                self.slots[s[0], s[1], 1].config(image=self.img_slot_valid, state="normal")
+            # TODO: add next step (move)
+
 
     def move_piece(self, row, col):
         pass
@@ -157,6 +200,6 @@ class PredictSettings:
 
 
 if __name__ == '__main__':
-    game_gui = GameGUI()
+    game_gui = GameGUI(board_row=args.row, board_col=args.column)
     game_gui.game_board.players["Player1"].update_remoteness("WIN", 7)
     game_gui.run()  # TODO: change config when run

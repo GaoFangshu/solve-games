@@ -1,12 +1,7 @@
 import math
 
-# You can change the parameters in the following
-BOARD_ROW = 4
-BOARD_COL = 5
-START_PLAYER = 0
-
-class GAME:
-    def __init__(self, board_row=BOARD_ROW, board_col=BOARD_COL, start_player=START_PLAYER):
+class Game:
+    def __init__(self, board_row, board_col):
         self.board_row = board_row
         self.board_col = board_col
 
@@ -14,8 +9,6 @@ class GAME:
         self.init_position = [[1 for i in range(self.board_col)] for j in range(self.board_row)]
         self.init_position[0][math.ceil(self.board_col / 2.0) - 1] = 2  # player 1
         self.init_position[self.board_row - 1][math.floor(self.board_col / 2.0)] = 3  # player 2
-
-        self.start_player = start_player
 
         self.dict_turn = {0: 2, 1: 3}  # 2 for player 1, 3 for player 2
 
@@ -73,7 +66,11 @@ class GAME:
 
 
 if __name__ == '__main__':
-    game = GAME()
+    # You can change the parameters in the following
+    BOARD_ROW = 4
+    BOARD_COL = 5
+
+    game = Game(board_row=BOARD_ROW, board_col=BOARD_COL)
     print(game.init_position)
     game.print_possible_move(p=game.init_position, turn=[0, 0])
     game.print_possible_move(p=game.init_position, turn=[1, 0])

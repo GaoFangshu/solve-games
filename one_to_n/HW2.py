@@ -263,7 +263,7 @@ if __name__ == '__main__':
             if main_env.turn < main_env.n_player:
                 print("\nCurrent position: %i, and it's %s's turn." % (
                     main_env.game.curr_position, main_env.players[main_env.turn][0]))
-                main_env.players[main_env.turn][1].do_player_move(main_env=main_env)
+                main_env.players[main_env.turn][1].do_player_move(env=main_env)
                 if not main_env.game.is_primitive(main_env.game.curr_position):
                     main_env.turn += 1
             else:
