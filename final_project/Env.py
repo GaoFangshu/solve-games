@@ -4,25 +4,31 @@ from final_project import Game
 
 # Env holds game and dynamic variables (analysis, database later). GameGUI just interacts with Env.
 class Env:
-    def __init__(self, game_name, board_row, board_col):
+    def __init__(self, board_row, board_col):
+        self.board_row = board_row
+        self.board_col = board_col
         self.game = None
-        self.players = [0, 0]
+        self.turn = None
+        self.players = None
         self.database = None
+        self.curr_position = None
+
+        self.restart()
+
+    def restart(self):
         self.turn = [0, 0]
-
-        # Change: following code executes the function of previous "create_game" function.
-        if game_name == "Isolation":
-            self.game = Game.Game(board_row=board_row, board_col=board_col)    # TODO: handle start_player
-
+        self.players = []
+        self.database = None
+        self.game = Game.Game(board_row=self.board_row, board_col=self.board_col)  # TODO: handle start_player
         self.curr_position = self.game.init_position
-        self.database = Database()    # TODO: finish database API
+        self.database = Database()  # TODO: finish database API
 
     def add_player(self, is_human):    # TODO: human name
-        if is_human:
-            name = "human"
-        else:
-            name = "computer"
-        self.players.append(Player(name = name, is_human=is_human))
+            if is_human:
+                name = "human"
+            else:
+                name = "computer"
+            self.players.append(Player(name = name, is_human=is_human))
 
 class Player:
     def __init__(self, name, is_human):

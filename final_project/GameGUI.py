@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description='Game Player')
 parser.add_argument('-g', '--game_name', choices=["Isolation"], default='Isolation',
                     help='the game name, only "Isolation" for now')
 parser.add_argument('-r', '--row', type=int, default=4, help='number of rows of gameboard')
-parser.add_argument('-c', '--column', type=int, default=4, help='number of columns of gameboard')
+parser.add_argument('-c', '--column', type=int, default=5, help='number of columns of gameboard')
 parser.add_argument('-d', '--database_name', default=None, help='filename of the database file')
 args = parser.parse_args()
 
@@ -46,11 +46,16 @@ IMG_MOVE_LU = "img/ArrowLU.png"
 IMG_MOVE_LD = "img/ArrowLD.png"
 IMG_MOVE_RU = "img/ArrowRU.png"
 IMG_MOVE_RD = "img/ArrowRD.png"
+IMG_1_WIN = "img/Player1Win.png"
+IMG_2_WIN = "img/Player2Win.png"
+IMG_Ash = "img/Ash.png"
+IMG_MINI_P1 = "img/MiniP1.png"
+IMG_MINI_P2 = "img/MiniP2.png"
 
 
 class GameGUI:
     def __init__(self, board_row, board_col):
-        self.env = Env.Env(game_name=args.game_name, board_row=board_row, board_col=board_col)
+        self.env = Env.Env(board_row=board_row, board_col=board_col)
 
         self.window = tk.Tk()
 
@@ -73,32 +78,43 @@ class GameBoard:
     def __init__(self, master, board_row, board_col, env):
         # self.master = master
         self.frame = ttk.LabelFrame(master, text="Game Board")
+        self.board_row = board_row
+        self.board_col = board_col
+        self.env = env
 
-        self.board = Board(self.frame, board_row=board_row, board_col=board_col, env=env)
-        self.board.frame.grid(row=0, column=1)
+        self.board = Board(self.frame, board_row=self.board_row, board_col=self.board_col, env=self.env)
+        self.board.frame.grid(row=0, column=0)
 
         self.players = {}  # TODO: to GUI
-        self.players["Player1"] = self.add_player_info(name="Player1", turn=True)  # TODO: fill name automatically
-        self.players["Player1"].frame.grid(row=0, column=0)
-        self.players["Player2"] = self.add_player_info(name="Player2", turn=False)
-        self.players["Player2"].frame.grid(row=0, column=2)
+        self.player_info = self.add_player_info(name="Info", turn=True)  # TODO: fill name automatically
+        self.player_info.frame.grid(row=1, column=0)
 
     def add_player_info(self, name, turn):
         return PlayerInfo(master=self.frame, name=name, turn=turn)
+
+    '''
+    def init_board(self):
+        if self.board:
+            self.board.frame.grid_forget()
+        else:
+            self.board = Board(self.frame, board_row=self.board_row, board_col=self.board_col, env=self.env)
+            self.board.frame.grid(row=0, column=1)
+    '''
 
 
 class Board:
     def __init__(self, master, board_row, board_col, env):
         self.env = env
-        self.frame = ttk.LabelFrame(master)
+        self.frame = tk.LabelFrame(master, borderwidth=0, highlightthickness=0)
         self.board_row = board_row
         self.board_col = board_col
 
         [self.img_slot_true, self.img_slot_false, self.img_piece_0, self.img_piece_1, self.img_move_L, self.img_move_R,
-         self.img_move_U, self.img_move_D, self.img_move_LU, self.img_move_LD, self.img_move_RU, self.img_move_RD] = [
+         self.img_move_U, self.img_move_D, self.img_move_LU, self.img_move_LD, self.img_move_RU, self.img_move_RD,
+         self.img_1_win, self.img_2_win] = [
             tk.PhotoImage(file=img) for img in
             [IMG_SLOT_TRUE, IMG_SLOT_FALSE, IMG_PIECE_0, IMG_PIECE_1, IMG_MOVE_L, IMG_MOVE_R, IMG_MOVE_U, IMG_MOVE_D,
-             IMG_MOVE_LU, IMG_MOVE_LD, IMG_MOVE_RU, IMG_MOVE_RD]]
+             IMG_MOVE_LU, IMG_MOVE_LD, IMG_MOVE_RU, IMG_MOVE_RD, IMG_1_WIN, IMG_2_WIN]]
 
         self.dict_img = {0: self.img_slot_false,
                          1: self.img_slot_true,
@@ -184,11 +200,9 @@ class Board:
         self.show_position(p=self.env.curr_position)
         # check winner
         if self.env.game.primitive(p=self.env.curr_position) == 2:
-            WinDialog(master=self.frame, message="Player 2 Wins!")
-            #messagebox.showinfo(title="Game Over", message="Player 2 Wins!")
+            self.game_over(msg="Player 2 Wins!", img=self.img_2_win)
         elif self.env.game.primitive(p=self.env.curr_position) == 3:
-            WinDialog(master=self.frame, message="Player 1 Wins!")
-            #messagebox.showinfo(title="Game Over", message="Player 1 Wins!")
+            self.game_over(msg="Player 1 Wins!", img=self.img_1_win)
 
     def next_turn(self):
         if self.env.turn[0] == 0 and self.env.turn[1] == 0:
@@ -202,10 +216,26 @@ class Board:
             self.env.turn[0] = 0
             self.env.turn[1] = 0
 
+    def game_over(self, msg, img):
+        top = tk.Toplevel(self.frame)
+        top.title = "Game Over"
+        frame = tk.LabelFrame(top)
+        frame.place(anchor='n')
+        tk.Label(frame, image=img).grid()
+        tk.Label(frame, text=msg).grid()
+        b = tk.Button(top, text="Try again", command=lambda top=top: self.restart(top))
+        b.place(anchor='s')
+
+    def restart(self, top):
+        top.destroy()
+        self.env.restart()
+        self.init_board()
+        self.show_position(p=self.env.curr_position)
+
 
 class PlayerInfo:
     def __init__(self, master, name, turn=False):
-        self.frame = ttk.LabelFrame(master, text=name)
+        self.frame = ttk.LabelFrame(master, text="Information")
         self.name = name
 
         self.turn = turn
@@ -230,9 +260,11 @@ class Settings:
     def __init__(self, master):
         self.frame = ttk.LabelFrame(master, text="Settings")
 
-        self.player1 = PlayerSettings(self.frame, "Player 1")
+        self.players = tk.LabelFrame(self.frame, text="Players")
+        self.players.grid(row=0, column=0)
+        self.player1 = PlayerSettings(master=self.players, img=IMG_MINI_P1)  # TODO: center
         self.player1.frame.grid(row=0, column=0)
-        self.player2 = PlayerSettings(self.frame, "Player 2")
+        self.player2 = PlayerSettings(master=self.players, img=IMG_MINI_P2)  # TODO: center
         self.player2.frame.grid(row=0, column=1)
 
         self.prediction = PredictSettings(self.frame)
@@ -240,19 +272,24 @@ class Settings:
 
 
 class PlayerSettings:
-    def __init__(self, master, name):
-        self.frame = ttk.LabelFrame(master)
-        self.name = ttk.Label(self.frame, text=name)
-        self.name.grid(row=0, column=0)
+    def __init__(self, master, img):
+        self.frame = tk.Frame(master, borderwidth=0, highlightthickness=0)
+        self.title = tk.Frame(self.frame, borderwidth=0, highlightthickness=0)
+        self.title.grid(row=0, column=0, rowspan=2, sticky='n')
+        self.img_player = tk.PhotoImage(file=img)
+        tk.Label(self.title, image=self.img_player).grid()
 
         self.type = tk.IntVar()
         self.computer_button = tk.Radiobutton(self.frame, text="Computer", variable=self.type, value=0,
                                               command=self.choose)
-        self.computer_button.grid(row=1, column=0)
+        self.computer_button.grid(row=0, column=1, sticky='w')
         self.human_button = tk.Radiobutton(self.frame, text="Human", variable=self.type, value=1, command=self.choose)
-        self.human_button.grid(row=2, column=0)  # TODO: Add rename Entry
+        self.human_button.grid(row=1, column=1, sticky='w')  # TODO: Set name
 
-        self.choice = None
+        self.name = tk.StringVar()
+        self.name_entry = tk.Entry(self.frame, textvariable=self.name)
+        self.name_entry.grid(row=1, column=2, sticky='w')
+        tk.Label(self.frame, text="   ").grid(row=1, column=3)
 
     def choose(self):
         self.choice = self.type.get()
@@ -265,21 +302,7 @@ class PredictSettings:
         self.predict_button.deselect()
 
 
-class WinDialog:
-    def __init__(self, master, message):#, env):
-        self.top = tk.Toplevel(master)
-        self.top.title = "Game Over"
-        tk.Label(self.top, text=message).pack()
-
-        b = tk.Button(self.top, text="Try again", command=self.ok)
-        b.pack(pady=5)
-
-    def ok(self):
-        self.top.destroy()
-
-
-
 if __name__ == '__main__':
     game_gui = GameGUI(board_row=args.row, board_col=args.column)
-    game_gui.game_board.players["Player1"].update_remoteness("WIN", 7)
+    game_gui.game_board.player_info.update_remoteness("WIN", 7)
     game_gui.run()  # TODO: change config when run
