@@ -36,8 +36,8 @@ Layout:
 
 IMG_SLOT_TRUE = "img/Floor.png"
 IMG_SLOT_FALSE = "img/Fire.png"
-IMG_PIECE_0 = "img/FiremanRed.png"
-IMG_PIECE_1 = "img/FiremanBlue.png"
+IMG_PIECE_0 = "img/Player1.png"
+IMG_PIECE_1 = "img/Player2.png"
 IMG_MOVE_L = "img/ArrowL.png"
 IMG_MOVE_R = "img/ArrowR.png"
 IMG_MOVE_U = "img/ArrowU.png"
@@ -53,6 +53,7 @@ class GameGUI:
         self.env = Env.Env(game_name=args.game_name, board_row=board_row, board_col=board_col)
 
         self.window = tk.Tk()
+
         self.game_board = GameBoard(master=self.window, board_row=board_row, board_col=board_col, env=self.env)
         self.game_board.frame.grid(row=0, column=0)
 
@@ -183,9 +184,11 @@ class Board:
         self.show_position(p=self.env.curr_position)
         # check winner
         if self.env.game.primitive(p=self.env.curr_position) == 2:
-            messagebox.showinfo("Game Over", "Player 2 Wins!")
+            WinDialog(master=self.frame, message="Player 2 Wins!")
+            #messagebox.showinfo(title="Game Over", message="Player 2 Wins!")
         elif self.env.game.primitive(p=self.env.curr_position) == 3:
-            messagebox.showinfo("Game Over", "Player 1 Wins!")
+            WinDialog(master=self.frame, message="Player 1 Wins!")
+            #messagebox.showinfo(title="Game Over", message="Player 1 Wins!")
 
     def next_turn(self):
         if self.env.turn[0] == 0 and self.env.turn[1] == 0:
@@ -260,6 +263,20 @@ class PredictSettings:
         self.predict_int = tk.IntVar()
         self.predict_button = tk.Checkbutton(master, text="Show values and remoteness", variable=self.predict_int)
         self.predict_button.deselect()
+
+
+class WinDialog:
+    def __init__(self, master, message):#, env):
+        self.top = tk.Toplevel(master)
+        self.top.title = "Game Over"
+        tk.Label(self.top, text=message).pack()
+
+        b = tk.Button(self.top, text="Try again", command=self.ok)
+        b.pack(pady=5)
+
+    def ok(self):
+        self.top.destroy()
+
 
 
 if __name__ == '__main__':
