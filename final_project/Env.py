@@ -1,5 +1,5 @@
-from final_project import Game
-
+from final_project import Game, Database
+from copy import deepcopy
 
 
 # Env holds game and dynamic variables (analysis, database later). GameGUI just interacts with Env.
@@ -21,7 +21,7 @@ class Env:
         self.database = None
         self.game = Game.Game(board_row=self.board_row, board_col=self.board_col)  # TODO: handle start_player
         self.curr_position = self.game.init_position
-        self.database = Database()  # TODO: finish database API
+        self.database = Database.Database(row=self.board_row, col=self.board_col)
 
     def add_player(self, is_human):    # TODO: human name
             if is_human:
@@ -29,6 +29,30 @@ class Env:
             else:
                 name = "computer"
             self.players.append(Player(name = name, is_human=is_human))
+
+    def gen_best_move(self, turn):
+        current_value, current_remoteness = database.lookup(position)
+        position_list = []
+        value_list = []
+        remoteness_list = []
+        valid_moves = self.game.gen_move(self.curr_position, turn)
+        for move in valid_moves:
+            position = game.do_move(p=deepcopy(game.curr_position), m=move, turn=turn))
+            value, remoteness = database.lookup(position)
+            position_list.append(position)
+            value_list.append(value)
+            remoteness_list.append(remoteness)
+
+        if current_value == "LOSE":
+                return m
+        elif current_value == "WIN":
+                if max_remote < result["remoteness"]:
+                    max_remote = result["remoteness"]
+                    max_remote_move = m
+        if tie_move is not None:
+            return tie_move
+        else:
+            return max_remote_move
 
 class Player:
     def __init__(self, name, is_human):
@@ -60,12 +84,6 @@ class Player:
     def gen_best_move(self, env):
         pass
 
-class Database:
-    def __init__(self):
-        pass
-
-    def solve(self, position):
-        return []
 
 if __name__ == '__main__':
 

@@ -7,8 +7,8 @@ import argparse
 parser = argparse.ArgumentParser(description='Game Player')
 parser.add_argument('-g', '--game_name', choices=["Isolation"], default='Isolation',
                     help='the game name, only "Isolation" for now')
-parser.add_argument('-r', '--row', type=int, default=4, help='number of rows of gameboard')
-parser.add_argument('-c', '--column', type=int, default=5, help='number of columns of gameboard')
+parser.add_argument('-r', '--row', type=int, default=2, help='number of rows of gameboard')
+parser.add_argument('-c', '--column', type=int, default=2, help='number of columns of gameboard')
 parser.add_argument('-d', '--database_name', default=None, help='filename of the database file')
 args = parser.parse_args()
 
@@ -260,15 +260,36 @@ class Settings:
     def __init__(self, master):
         self.frame = ttk.LabelFrame(master, text="Settings")
 
-        self.players = tk.LabelFrame(self.frame, text="Players")
-        self.players.grid(row=0, column=0)
-        self.player1 = PlayerSettings(master=self.players, img=IMG_MINI_P1)  # TODO: center
+        self.players = [0, 0]  # [player1, player2], 0 for computer, 1 for human
+        self.names = ["Computer 1", "Computer 2"]
+
+        self.player_frame = tk.LabelFrame(self.frame, text="Players")
+        self.player_frame.grid(row=0, column=0)
+        self.player1 = PlayerSettings(master=self.player_frame, img=IMG_MINI_P1)  # TODO: center
         self.player1.frame.grid(row=0, column=0)
-        self.player2 = PlayerSettings(master=self.players, img=IMG_MINI_P2)  # TODO: center
+        self.player2 = PlayerSettings(master=self.player_frame, img=IMG_MINI_P2)  # TODO: center
         self.player2.frame.grid(row=0, column=1)
+
+        self.player_button = tk.Button(self.player_frame, command=self.change_player, text="ok")
+        self.player_button.grid(row=1, column=0, columnspan=2)  # TODO: set width
 
         self.prediction = PredictSettings(self.frame)
         self.prediction.predict_button.grid(row=1, column=0)
+
+    def change_player(self):
+        i = 0
+        for player_setting in [self.player1, self.player2]:
+            if player_setting.type.get() == 0:  # computer
+                self.players[i] = 0
+                self.names[i] = "Computer " + str(i)
+            elif player_setting.type.get() == 1:
+                self.players[i] = 1
+                if player_setting.name.get():
+                    self.names[i] = player_setting.name.get()
+                else:
+                    self.names[i] = "Human " + str(i)
+            i += 1
+        print(self.players, self.names)
 
 
 class PlayerSettings:
@@ -287,7 +308,7 @@ class PlayerSettings:
         self.human_button.grid(row=1, column=1, sticky='w')  # TODO: Set name
 
         self.name = tk.StringVar()
-        self.name_entry = tk.Entry(self.frame, textvariable=self.name)
+        self.name_entry = tk.Entry(self.frame, textvariable=self.name)  # TODO: state='disabled'
         self.name_entry.grid(row=1, column=2, sticky='w')
         tk.Label(self.frame, text="   ").grid(row=1, column=3)
 
@@ -300,6 +321,7 @@ class PredictSettings:
         self.predict_int = tk.IntVar()
         self.predict_button = tk.Checkbutton(master, text="Show values and remoteness", variable=self.predict_int)
         self.predict_button.deselect()
+        self.predict_button.grid(sticky='w')
 
 
 if __name__ == '__main__':
