@@ -54,10 +54,15 @@ IMG_Ash = "img/Ash.png"
 IMG_MINI_P1 = "img/MiniP1.png"
 IMG_MINI_P2 = "img/MiniP2.png"
 
+IMG_ICO = "img/ico.ico"
+
 
 class GameGUI:
     def __init__(self):
         self.window = tk.Tk()
+        self.window.title("Isolation")
+        self.window.iconbitmap(IMG_ICO)
+
         self.frame = ttk.LabelFrame(self.window, text="Settings")
         self.frame.grid(row=0, column=0)
         self.players = [0, 0]  # [player1, player2], 0 for human, 1 for computer
@@ -94,7 +99,7 @@ class GameGUI:
     def start(self):
         # init environment
         self.board_row = int(self.size_setting.row.get())
-        self.board_col = int(self.size_setting.row.get())
+        self.board_col = int(self.size_setting.col.get())
         self.env = Env.Env(board_row=self.board_row, board_col=self.board_col)
 
         # init players
