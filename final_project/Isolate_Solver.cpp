@@ -43,10 +43,11 @@ typedef pair<pii, pii> Move;
 typedef pair<int8, int8> pcc;
 
 // Following are the game parameters
-#define N 4
-#define M 4
-const int SIZE = N * M, BASE[2] = { 1 << SIZE, (1 << SIZE) * SIZE };
-LL TOTAL_POSITION = (1ll << SIZE) * SIZE * SIZE;
+#define N 5
+#define M 5
+const int SIZE = N * M;
+const LL BASE[2] = { 1 << SIZE, (1 << SIZE) * SIZE };
+const LL TOTAL_POSITION = (1ll << SIZE) * SIZE * SIZE;
 const int dx[9] = { -1, -1, -1, 0, 0, 1, 1, 1 }, dy[9] = { -1, 0, 1, -1, 1, -1, 0, 1 };
 LL cnt_true_postion = 0;
 
@@ -267,6 +268,8 @@ int8 solve(Position p)
 	if (rel[p] != -1)
 		return rel[p];
 	cnt_true_postion++;
+	if (cnt_true_postion % 1000000 == 0)
+		debug(cnt_true_postion);
 	if (isPrimitive(p))
 	{
 		rel[p] = makeResult(LOSE, 0);
