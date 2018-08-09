@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox, font
 import math
 import Env
 from copy import deepcopy
-from time import sleep
+
 
 IMG_SLOT_TRUE = "img/Floor.png"
 IMG_SLOT_FALSE = "img/Fire.png"
@@ -111,16 +111,19 @@ class GameGUI:
                 self.names[i] = "Computer " + str(i + 1)
             i += 1
         self.env.players = self.players
-        self.env.turn_to_player = {0:self.names[0], 1:self.names[1]}
+        self.env.turn_to_player = {0: self.names[0], 1: self.names[1]}
         print(self.players, self.names)
 
         # init prediction
         self.env.prediction = self.predict_setting.predict_int.get()
 
         # init game_board
-        self.game_board = None
-        self.game_board = GameBoard(master=self.window, board_row=self.board_row, board_col=self.board_col, env=self.env)
+        if self.game_board:
+            self.game_board.frame.destroy()
+        self.game_board = GameBoard(master=self.window, board_row=self.board_row, board_col=self.board_col,
+                                    env=self.env)
         self.game_board.frame.grid(row=1, column=0)
+
 
 class SizeSettings:
     def __init__(self, master):
@@ -149,7 +152,8 @@ class PlayerSettings:
         self.computer_button = tk.Radiobutton(self.frame, text="Human", variable=self.type, value=0,
                                               command=self.choose)
         self.computer_button.grid(row=0, column=1, sticky='w')
-        self.human_button = tk.Radiobutton(self.frame, text="Computer", variable=self.type, value=1, command=self.choose)
+        self.human_button = tk.Radiobutton(self.frame, text="Computer", variable=self.type, value=1,
+                                           command=self.choose)
         self.human_button.grid(row=1, column=1, sticky='w')  # TODO: Set name
 
         self.name = tk.StringVar()
@@ -176,11 +180,18 @@ class GameBoard:
         self.board_row = board_row
         self.board_col = board_col
         self.env = env
+        self.player_info = None
+        self.board = None
 
+        if self.player_info:
+            self.player_info.frame.destroy()
         self.player_info = PlayerInfo(master=self.frame)
         self.player_info.frame.grid(row=1, column=0)
 
-        self.board = Board(self.frame, board_row=self.board_row, board_col=self.board_col, env=self.env, player_info=self.player_info)
+        if self.board:
+            self.board.frame.destroy()
+        self.board = Board(self.frame, board_row=self.board_row, board_col=self.board_col, env=self.env,
+                           player_info=self.player_info)
         self.board.frame.grid(row=0, column=0)
         self.board.show_position(p=self.env.curr_position)
         self.board.show_next_position()
@@ -241,6 +252,17 @@ class Board:
         self.pieces = {}
         self.init_board()
 
+        if self.env.players[self.env.turn[0]] == 1:  # if it is computer in this turn
+            curr_p = deepcopy(self.env.curr_position)
+            final_position, final_value, final_remoteness = self.env.gen_best_position(curr_p=curr_p,
+                                                                                       turn=self.env.turn)
+            self.env.curr_position = final_position
+            self.env.turn = self.env.next_turn(self.env.turn)
+            self.env.turn = self.env.next_turn(self.env.turn)
+            self.show_position(p=self.env.curr_position)
+            self.show_next_position()
+            self.check_winner()
+
     def init_board(self):  # TODO: labels are not given automatically
         for r in range(self.board_row):
             for c in range(self.board_col):
@@ -259,9 +281,8 @@ class Board:
         for r in p:
             col = 0
             for c in r:
-
                 self.slots[row, col, 1].config(image=self.value_to_img[c], compound=tk.CENTER)
-                self.slots[row, col, 1].config(command = lambda: None)
+                self.slots[row, col, 1].config(command=lambda: None)
                 col += 1
             row += 1
 
@@ -311,10 +332,11 @@ class Board:
                             self.slots[s[0], s[1], 1].config(image=img_move[7])
                         elif s[1] == col:  # down
                             self.slots[s[0], s[1], 1].config(image=img_move[3])
-                    # TODO: add remoteness
+                            # TODO: add remoteness
             else:
                 value, remoteness = self.env.database.lookup(p=self.env.curr_position)
-                self.player_info.update_remoteness(name=self.env.turn_to_player[self.env.turn[0]], value=value, remoteness=remoteness)
+                self.player_info.update_remoteness(name=self.env.turn_to_player[self.env.turn[0]], value=value,
+                                                   remoteness=remoteness)
                 for s in valid_slots:
                     self.slots[s[0], s[1], 1].config(command=lambda s=s: self.step(s[0], s[1]))
                     if s[0] == row:
@@ -362,7 +384,8 @@ class Board:
                                                              image=self.img_slot_green))
                         else:
                             self.slots[r, c, 1].bind("Enter",
-                                                     lambda r=r, c=c: self.slots[r, c, 1].config(image=self.img_slot_false))
+                                                     lambda r=r, c=c: self.slots[r, c, 1].config(
+                                                         image=self.img_slot_false))
                         self.slots[r, c, 1].config(command=lambda r=r, c=c: self.step(r, c))
 
     def step(self, row, col):  # do move or do delete
@@ -375,7 +398,8 @@ class Board:
 
         if self.env.players[self.env.turn[0]] == 1:  # if it is computer in this turn
             curr_p = deepcopy(self.env.curr_position)
-            final_position, final_value, final_remoteness = self.env.gen_best_position(curr_p=curr_p, turn=self.env.turn)
+            final_position, final_value, final_remoteness = self.env.gen_best_position(curr_p=curr_p,
+                                                                                       turn=self.env.turn)
             self.env.curr_position = final_position
             self.env.turn = self.env.next_turn(self.env.turn)
             self.env.turn = self.env.next_turn(self.env.turn)
