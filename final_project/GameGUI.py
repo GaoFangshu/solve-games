@@ -252,16 +252,7 @@ class Board:
         self.pieces = {}
         self.init_board()
 
-        if self.env.players[self.env.turn[0]] == 1:  # if it is computer in this turn
-            curr_p = deepcopy(self.env.curr_position)
-            final_position, final_value, final_remoteness = self.env.gen_best_position(curr_p=curr_p,
-                                                                                       turn=self.env.turn)
-            self.env.curr_position = final_position
-            self.env.turn = self.env.next_turn(self.env.turn)
-            self.env.turn = self.env.next_turn(self.env.turn)
-            self.show_position(p=self.env.curr_position)
-            self.show_next_position()
-            self.check_winner()
+        self.computer_step()
 
     def init_board(self):  # TODO: labels are not given automatically
         for r in range(self.board_row):
@@ -396,6 +387,9 @@ class Board:
         self.show_next_position()
         self.check_winner()
 
+        self.computer_step()
+
+    def computer_step(self):
         if self.env.players[self.env.turn[0]] == 1:  # if it is computer in this turn
             curr_p = deepcopy(self.env.curr_position)
             final_position, final_value, final_remoteness = self.env.gen_best_position(curr_p=curr_p,
@@ -408,11 +402,10 @@ class Board:
             self.check_winner()
 
     def check_winner(self):
-        name = self.env.turn_to_player[self.env.turn[0]]
-        if self.env.game.primitive(p=self.env.curr_position) == 2:
-            self.player_info.game_over(msg="%s Wins!" % name, img=self.img_2_win)
-        elif self.env.game.primitive(p=self.env.curr_position) == 3:
-            self.player_info.game_over(msg="%s Wins!" % name, img=self.img_1_win)
+        if self.env.game.primitive(p=self.env.curr_position, turn=self.env.turn) == 2:
+            self.player_info.game_over(msg="%s Wins!" % self.env.turn_to_player[1], img=self.img_2_win)
+        elif self.env.game.primitive(p=self.env.curr_position, turn=self.env.turn) == 3:
+            self.player_info.game_over(msg="%s Wins!" % self.env.turn_to_player[0], img=self.img_1_win)
 
     def restart(self, top):
         top.destroy()

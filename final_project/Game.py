@@ -37,10 +37,17 @@ class Game:
         elif turn[1] == 1:
             return self.gen_valid_delete_index(p=p)
 
-    def primitive(self, p):
+    def primitive(self, p, turn):
         is_primitive, valid0, valid1 = self.is_primitive(p)
-        if is_primitive:  # TODO: what if valid0 = valid1 = 0 ?
-            if len(valid0) == 0:
+        if is_primitive:
+            if (len(valid0) == 0) and (len(valid1) == 0):
+                if turn[0] == 0:
+                    print("player 1 LOSE")
+                    return 2
+                elif turn[0] == 1:
+                    print("player 2 LOSE")
+                    return 3
+            elif len(valid0) == 0:
                 print("player 1 LOSE")
                 return 2
             elif len(valid1) == 0:
