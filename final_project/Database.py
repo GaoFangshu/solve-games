@@ -61,3 +61,6 @@ if __name__ == '__main__':
     database = Database(row=4, col=4)
     print(database.lookup(position1))
     print(database.lookup(position2))
+
+    position3 = [[1, 1, 2, 1], [1, 1, 1, 1], [1, 1, 0, 1], [1, 1, 3, 1]]
+    print(database.lookup(position3))

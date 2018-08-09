@@ -12,11 +12,14 @@ class Env:
         self.players = None
         self.database = None
         self.curr_position = None
-        # prediction:
+        # predict_info:
         #   {"move": {"[move_row, move_col]": [value, remoteness], ...},
         #    "delete": {"[move_row, move_col]": [{"[delete_row, delete_col]": [value, remoteness], ...}], ...}
         #   }
+        self.predict_info = None
         self.prediction = False
+
+        self.last_move = None
 
         self.restart()
 
@@ -36,9 +39,8 @@ class Env:
             self.players.append(Player(name = name, is_human=is_human))
 
     def predict(self, curr_p, turn, valid_moves):
-        current_value, current_remoteness = self.database.lookup(curr_p)
         info = {}
-        prediction = {"move":{}, "delete":{}}
+        self.predict_info = {"move":{}, "delete":{}}
         #valid_moves = self.game.gen_move(curr_p, turn)
         for move in valid_moves:
             print("valid_moves")
@@ -71,18 +73,16 @@ class Env:
                 for index in index_lose:
                     if min_remoteness >= remoteness_list[index]:
                         min_remoteness = remoteness_list[index]
-                prediction["move"][move] = ["WIN", min_remoteness + 1]
+                self.predict_info["move"][move] = ["LOSE", min_remoteness + 1]
 
             else:  # this move leads to all WIN, this move is LOSE for me
                 # choose WIN largest remoteness
                 index_max = remoteness_list.index(max(remoteness_list))
-                prediction["move"][move] = ["LOSE", remoteness_list[index_max] + 1]
+                self.predict_info["move"][move] = ["WIN", remoteness_list[index_max] + 1]
 
         # get "delete" step prediction
-        prediction["delete"] = info
-
-        return prediction
-
+        self.predict_info["delete"] = info
+        print(self.predict_info)
 
     def gen_best_position(self, curr_p, turn):  # return position(list), value("WIN" or "LOSE"), remoteness(int)
         current_value, current_remoteness = self.database.lookup(curr_p)

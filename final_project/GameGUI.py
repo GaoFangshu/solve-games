@@ -2,41 +2,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import math
 from final_project import Env
-import argparse
 from copy import deepcopy
-
-parser = argparse.ArgumentParser(description='Game Player')
-parser.add_argument('-g', '--game_name', choices=["Isolation"], default='Isolation',
-                    help='the game name, only "Isolation" for now')
-parser.add_argument('-r', '--row', type=int, default=4, help='number of rows of gameboard')
-parser.add_argument('-c', '--column', type=int, default=4, help='number of columns of gameboard')
-parser.add_argument('-d', '--database_name', default=None, help='filename of the database file')
-args = parser.parse_args()
-
-"""
-Layout:
-+---------------------GameGUI---------------------+
-| +------------------GameBoard------------------+ |
-| | +-PLayerInfo1-+ +--Board--+ +-PLayerInfo1-+ | |
-| | |             | |         | |             | | |
-| | |             | |         | |             | | |
-| | |             | |         | |             | | |
-| | +-------------+ +---------+ +-------------+ | |
-| +---------------------------------------------+ |
-| +------------------Settings-------------------+ |
-| | +------Player1------+ +------Player1------+ | |
-| | | * Computer        | | * Computer        | | |
-| | | * Human name      | | * Human name      | | |
-| | +-------------------+ +-------------------+ | |
-| | +---PredictSettings-----------------------+ | |
-| | | * Show value and remoteness             | | |
-| | +-----------------------------------------+ | |
-| +---------------------------------------------+ |
-+-------------------------------------------------+
-"""
+from time import sleep
 
 IMG_SLOT_TRUE = "img/Floor.png"
 IMG_SLOT_FALSE = "img/Fire.png"
+IMG_SLOT_RED = "img/RedFloor.png"
+IMG_SLOT_GREEN = "img/GreenFloor.png"
 IMG_PIECE_0 = "img/Player1.png"
 IMG_PIECE_1 = "img/Player2.png"
 
@@ -82,20 +54,18 @@ IMG_Ash = "img/Ash.png"
 IMG_MINI_P1 = "img/MiniP1.png"
 IMG_MINI_P2 = "img/MiniP2.png"
 
-
+'''
 class GameGUI:
-    def __init__(self, board_row, board_col):
+    def __init__(self):
         self.env = Env.Env(board_row=board_row, board_col=board_col)
 
         self.window = tk.Tk()
 
-        self.settings = Settings(master=self.window, env=self.env)
+        self.game_board = GameBoard(master=self.window, board_row=board_row, board_col=board_col,
+                                    env=self.env)
+
+        self.settings = Settings(master=self.window, game_board=self.game_board, env=self.env)
         self.settings.frame.grid(row=0, column=0)
-
-        self.game_board = GameBoard(master=self.window, board_row=board_row, board_col=board_col, env=self.env)
-        self.game_board.frame.grid(row=1, column=0)
-
-
 
         # self.game = Game.Game(board_row=board_row, board_col=board_row)
 
@@ -103,6 +73,118 @@ class GameGUI:
         # self.p1_choice = self.settings.player1.type
         # self.p2_choice = self.settings.player2.type
         self.window.mainloop()
+'''
+
+class GameGUI:
+    def __init__(self):
+        self.window = tk.Tk()
+        self.frame = ttk.LabelFrame(self.window, text="Settings")
+        self.frame.grid(row=0, column=0)
+        self.players = [0, 0]  # [player1, player2], 0 for human, 1 for computer
+        self.names = ["Human 1", "Human 2"]
+
+        self.size_frame = tk.LabelFrame(self.frame, borderwidth=0, highlightthickness=0)
+        self.size_frame.grid(row=0, column=0, sticky='w', columnspan=2)  # TODO: set width
+        self.size_setting = SizeSettings(master=self.size_frame)
+
+        self.player_frame = tk.LabelFrame(self.frame, borderwidth=0, highlightthickness=0)
+        self.player_frame.grid(row=1, column=0)
+        self.player1 = PlayerSettings(master=self.player_frame, img=IMG_MINI_P1)  # TODO: center
+        self.player1.frame.grid(row=0, column=0)
+        self.player2 = PlayerSettings(master=self.player_frame, img=IMG_MINI_P2)  # TODO: center
+        self.player2.frame.grid(row=0, column=1)
+
+        self.predict_frame = tk.LabelFrame(self.frame, borderwidth=0, highlightthickness=0)
+        self.predict_frame.grid(row=2, column=0, sticky='w')  # TODO: set width
+        self.predict_setting = PredictSettings(self.predict_frame)
+        self.predict_setting.predict_button.grid(row=0, column=0, sticky='w')
+
+        self.player_button = tk.Button(self.frame, command=self.change_player, text="Fight!")
+        self.player_button.grid(row=3, column=0)  # TODO: set width
+
+        self.board_row = None
+        self.board_col = None
+        self.env = None
+        self.players = [0, 0]  # [player1, player2], 0 for human, 1 for computer
+        self.names = ["Human 1", "Human 2"]
+        self.game_board = None
+
+        self.window.mainloop()
+
+    def change_player(self):
+        # init environment
+        self.board_row = int(self.size_setting.row.get())
+        self.board_col = int(self.size_setting.row.get())
+        self.env = Env.Env(board_row=self.board_row, board_col=self.board_col)
+
+        # init players
+        i = 0
+        for player_setting in [self.player1, self.player2]:
+            if player_setting.type.get() == 0:  # human
+                self.players[i] = 0
+                if player_setting.name.get():
+                    self.names[i] = player_setting.name.get()
+                else:
+                    self.names[i] = "Human " + str(i + 1)
+            elif player_setting.type.get() == 1:  # computer
+                self.players[i] = 1
+                self.names[i] = "Computer " + str(i + 1)
+            i += 1
+        self.env.players = self.players
+        print(self.players, self.names)
+
+        # init prediction
+        self.env.prediction = self.predict_setting.predict_int.get()
+
+        # init game_board
+        self.game_board = GameBoard(master=self.window, board_row=self.board_row, board_col=self.board_col, env=self.env)
+        self.game_board.frame.grid(row=1, column=0)
+
+class SizeSettings:
+    def __init__(self, master):
+        tk.Label(master, text="Board size: ").grid(row=0, column=0, sticky='w')
+
+        self.row = tk.StringVar()
+        self.row_entry = tk.Entry(master, textvariable=self.row, width=3)
+        self.row_entry.grid(row=0, column=1, sticky='w')
+
+        tk.Label(master, text="*").grid(row=0, column=2)
+
+        self.col = tk.StringVar()
+        self.col_entry = tk.Entry(master, textvariable=self.col, width=3)
+        self.col_entry.grid(row=0, column=3, sticky='w')
+
+
+class PlayerSettings:
+    def __init__(self, master, img):
+        self.frame = tk.Frame(master, borderwidth=0, highlightthickness=0)
+        self.title = tk.Frame(self.frame, borderwidth=0, highlightthickness=0)
+        self.title.grid(row=0, column=0, rowspan=2, sticky='n')
+        self.img_player = tk.PhotoImage(file=img)
+        tk.Label(self.title, image=self.img_player).grid()
+
+        self.type = tk.IntVar()
+        self.computer_button = tk.Radiobutton(self.frame, text="Human", variable=self.type, value=0,
+                                              command=self.choose)
+        self.computer_button.grid(row=0, column=1, sticky='w')
+        self.human_button = tk.Radiobutton(self.frame, text="Computer", variable=self.type, value=1, command=self.choose)
+        self.human_button.grid(row=1, column=1, sticky='w')  # TODO: Set name
+
+        self.name = tk.StringVar()
+        self.name_entry = tk.Entry(self.frame, textvariable=self.name)  # TODO: state='disabled'
+        self.name_entry.grid(row=0, column=2, sticky='w')
+        tk.Label(self.frame, text="   ").grid(row=1, column=3)
+
+    def choose(self):
+        self.choice = self.type.get()
+
+
+class PredictSettings:
+    def __init__(self, master):
+        self.predict_int = tk.IntVar()
+        self.predict_button = tk.Checkbutton(master, text="Show values and remoteness", variable=self.predict_int)
+        self.predict_button.deselect()
+        self.predict_button.grid(sticky='w')
 
 
 class GameBoard:
@@ -115,6 +197,7 @@ class GameBoard:
 
         self.board = Board(self.frame, board_row=self.board_row, board_col=self.board_col, env=self.env)
         self.board.frame.grid(row=0, column=0)
+        self.board.show_position(p=self.env.curr_position)
 
         self.players = {}  # TODO: to GUI
         self.player_info = self.add_player_info(name="Info", turn=True)  # TODO: fill name automatically
@@ -140,7 +223,8 @@ class Board:
         self.board_row = board_row
         self.board_col = board_col
 
-        [self.img_slot_true, self.img_slot_false, self.img_piece_0, self.img_piece_1, self.img_1_win, self.img_2_win,
+        [self.img_slot_true, self.img_slot_false, self.img_slot_red, self.img_slot_green,
+         self.img_piece_0, self.img_piece_1, self.img_1_win, self.img_2_win,
 
          self.img_move_L, self.img_move_R, self.img_move_U, self.img_move_D, self.img_move_LU, self.img_move_LD,
          self.img_move_RU, self.img_move_RD,
@@ -156,7 +240,8 @@ class Board:
 
          ] = [
             tk.PhotoImage(file=img) for img in
-            [IMG_SLOT_TRUE, IMG_SLOT_FALSE, IMG_PIECE_0, IMG_PIECE_1, IMG_1_WIN, IMG_2_WIN,
+            [IMG_SLOT_TRUE, IMG_SLOT_FALSE, IMG_SLOT_RED, IMG_SLOT_GREEN,
+             IMG_PIECE_0, IMG_PIECE_1, IMG_1_WIN, IMG_2_WIN,
 
              IMG_MOVE_L, IMG_MOVE_R, IMG_MOVE_U, IMG_MOVE_D, IMG_MOVE_LU, IMG_MOVE_LD, IMG_MOVE_RU, IMG_MOVE_RD,
 
@@ -183,7 +268,6 @@ class Board:
         self.slots = {}
         self.pieces = {}
         self.init_board()
-        self.show_position(p=self.env.curr_position)
 
     def init_board(self):  # TODO: labels are not given automatically
         for r in range(self.board_row):
@@ -222,11 +306,11 @@ class Board:
             print(row, col)
 
             if self.env.prediction:
-                info = self.env.predict(curr_p=self.env.curr_position, turn=self.env.turn, valid_moves=valid_slots)
+                self.env.predict(curr_p=self.env.curr_position, turn=self.env.turn, valid_moves=valid_slots)
                 for s in valid_slots:  # {slot: value, remoteness}
                     print(s)
                     self.slots[s[0], s[1], 1].config(command=lambda s=s: self.step(s[0], s[1]))
-                    value, remoteness = info[str(s)]
+                    value, remoteness = self.env.predict_info["move"][str(s)]
                     if value == "WIN":  # lead to WIN position, bad choice
                         img_move = self.color_to_img["Red"]
                     elif value == "LOSE":  # lead to LOSE position, good choice
@@ -275,14 +359,35 @@ class Board:
                         elif s[1] == col:  # down
                             self.slots[s[0], s[1], 1].config(image=self.img_move_D)
         elif self.env.turn[1] == 1:  # activate slots to delete
+            if self.env.prediction:
+                deletes_info = self.env.predict_info["delete"][str(self.env.last_move)]
+                deletes_info_zip = list(zip(*deletes_info))  # [([d_row, d_col], value, remoteness), ...]
+                delete_list = [str(info[0]) for info in deletes_info_zip]
+
             for r in range(self.board_row):
                 for c in range(self.board_col):
                     if self.env.curr_position[r][c] == 1:
-                        self.slots[r, c, 1].bind("Enter",
-                                                 lambda r=r, c=c: self.slots[r, c, 1].config(image=self.img_slot_false))
+                        if self.env.prediction:
+                            print("I'm here!")
+                            value = deletes_info[1][delete_list.index(str([r, c]))]
+                            remoteness = deletes_info[2][delete_list.index(str([r, c]))]
+                            if value == "WIN":  # lead to WIN position, bad choice
+                                self.slots[r, c, 1].config(image=self.img_slot_red)
+                                self.slots[r, c, 1].bind("Enter",
+                                                         lambda r=r, c=c: self.slots[r, c, 1].config(
+                                                             image=self.img_slot_red))
+                            elif value == "LOSE":  # lead to LOSE position, good choice
+                                self.slots[r, c, 1].config(image=self.img_slot_green)
+                                self.slots[r, c, 1].bind("Enter",
+                                                         lambda r=r, c=c: self.slots[r, c, 1].config(
+                                                             image=self.img_slot_green))
+                        else:
+                            self.slots[r, c, 1].bind("Enter",
+                                                     lambda r=r, c=c: self.slots[r, c, 1].config(image=self.img_slot_false))
                         self.slots[r, c, 1].config(command=lambda r=r, c=c: self.step(r, c))
 
     def step(self, row, col):  # do move or do delete
+        self.env.last_move = [row, col]
         print(self.env.curr_position)
         self.env.curr_position = self.env.game.do_move(p=self.env.curr_position, m=[row, col], turn=self.env.turn)
         self.env.turn = self.env.next_turn(self.env.turn)
@@ -291,7 +396,7 @@ class Board:
         self.show_position(p=self.env.curr_position)
         self.check_winner()
 
-        if self.env.players[self.env.turn[0]] == 0:  # if it is computer in this turn
+        if self.env.players[self.env.turn[0]] == 1:  # if it is computer in this turn
             curr_p = deepcopy(self.env.curr_position)
             final_position, final_value, final_remoteness = self.env.gen_best_position(curr_p=curr_p, turn=self.env.turn)
             self.env.curr_position = final_position
@@ -347,77 +452,10 @@ class PlayerInfo:
         self.remoteness_info.config(text="%s should %s in %i." % (self.name, value, remoteness))
 
 
-class Settings:
-    def __init__(self, master, env):
-        self.env = env
-        self.frame = ttk.LabelFrame(master, text="Settings")
 
-        self.players = [0, 0]  # [player1, player2], 0 for computer, 1 for human
-        self.names = ["Computer 1", "Computer 2"]
-
-        self.player_frame = tk.LabelFrame(self.frame, text="Players")
-        self.player_frame.grid(row=0, column=0)
-        self.player1 = PlayerSettings(master=self.player_frame, img=IMG_MINI_P1)  # TODO: center
-        self.player1.frame.grid(row=0, column=0)
-        self.player2 = PlayerSettings(master=self.player_frame, img=IMG_MINI_P2)  # TODO: center
-        self.player2.frame.grid(row=0, column=1)
-
-        self.player_button = tk.Button(self.player_frame, command=self.change_player, text="Fight!")
-        self.player_button.grid(row=1, column=0, columnspan=2)  # TODO: set width
-
-        self.prediction = PredictSettings(self.frame)
-        self.prediction.predict_button.grid(row=1, column=0)
-
-    def change_player(self):
-        i = 0
-        for player_setting in [self.player1, self.player2]:
-            if player_setting.type.get() == 0:  # computer
-                self.players[i] = 0
-                self.names[i] = "Computer " + str(i)
-            elif player_setting.type.get() == 1:
-                self.players[i] = 1
-                if player_setting.name.get():
-                    self.names[i] = player_setting.name.get()
-                else:
-                    self.names[i] = "Human " + str(i)
-            i += 1
-        self.env.players = self.players
-        print(self.players, self.names)
-
-
-class PlayerSettings:
-    def __init__(self, master, img):
-        self.frame = tk.Frame(master, borderwidth=0, highlightthickness=0)
-        self.title = tk.Frame(self.frame, borderwidth=0, highlightthickness=0)
-        self.title.grid(row=0, column=0, rowspan=2, sticky='n')
-        self.img_player = tk.PhotoImage(file=img)
-        tk.Label(self.title, image=self.img_player).grid()
-
-        self.type = tk.IntVar()
-        self.computer_button = tk.Radiobutton(self.frame, text="Computer", variable=self.type, value=0,
-                                              command=self.choose)
-        self.computer_button.grid(row=0, column=1, sticky='w')
-        self.human_button = tk.Radiobutton(self.frame, text="Human", variable=self.type, value=1, command=self.choose)
-        self.human_button.grid(row=1, column=1, sticky='w')  # TODO: Set name
-
-        self.name = tk.StringVar()
-        self.name_entry = tk.Entry(self.frame, textvariable=self.name)  # TODO: state='disabled'
-        self.name_entry.grid(row=1, column=2, sticky='w')
-        tk.Label(self.frame, text="   ").grid(row=1, column=3)
-
-    def choose(self):
-        self.choice = self.type.get()
-
-
-class PredictSettings:
-    def __init__(self, master):
-        self.predict_int = tk.IntVar()
-        self.predict_button = tk.Checkbutton(master, text="Show values and remoteness", variable=self.predict_int)
-        self.predict_button.deselect()
-        self.predict_button.grid(sticky='w')
 
 
 if __name__ == '__main__':
-    game_gui = GameGUI(board_row=args.row, board_col=args.column)
-    game_gui.game_board.player_info.update_remoteness("WIN", 7)
-    game_gui.run()  # TODO: change config when run
+    game_gui = GameGUI()
+#    game_gui.game_board.player_info.update_remoteness("WIN", 7)
+    #game_gui.run()  # TODO: change config when run
