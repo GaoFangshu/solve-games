@@ -36,31 +36,28 @@ class Database:
 
         print("Position to hash: " + str(p))
         print("Hash value: %i" % hash_value)
+        return hash_value
 
-        ret = os.system("reader.exe database_%s_%s.db %s" % (str(self.row), str(self.col), str(hash_value)))
-        return ret
-
-    def get(self, ret):
+    def get_info(self, ret):
         '''
         the highest bit means win/lose (win is 0, lose is 1), other 7 bits is the remoteness
             for example: (10001110)_2 means: LOSE and 14 remoteness.
         '''
-        print(ret)
-        print("{0:b}".format(ret))
-        msg = "{0:b}".format(ret)[:-8]
-        print("ret: " + str(int(msg, 2)))
+        print("ret: %i" % ret)
+        msg = "{0:b}".format(ret).zfill(8)
         print("msg: " + msg)
         value = int(msg[-8])  # 0 for win, 1 for lose
         remoteness = int(msg[-7:], 2)
         return value_dict[value], remoteness
 
     def lookup(self, p):
-        ret = self.hash(p)
-        return self.get(ret)
+        hash_value = self.hash(p)
+        ret = os.system("reader.exe database_%s_%s.db %s" % (str(self.row), str(self.col), str(hash_value)))
+        return self.get_info(ret)
 
 if __name__ == '__main__':
-    position = [[2, 1, 1, 1], [1, 1, 1, 0], [1, 0, 1, 1], [1, 1, 1, 3]]
+    position1 = [[2, 1, 1, 1], [1, 1, 0, 1], [1, 1, 1, 1], [1, 1, 3, 1]]  # player 2 to move and delete
+    position2 = [[2, 1, 1, 1], [0, 1, 0, 1], [1, 3, 1, 1], [1, 1, 1, 1]]  # player 1 to move and delete
     database = Database(row=4, col=4)
-    print(database.lookup(position))
-    print(database.get(os.system("reader.exe database_4_4.db 15729280")))
-    print(os.system("reader.exe database_4_4.db 15729280"))
+    print(database.lookup(position1))
+    print(database.lookup(position2))
