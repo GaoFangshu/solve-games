@@ -34,8 +34,6 @@ class Database:
                     hash_value += 2 ** self.n * self.n * i
                 i += 1
 
-        print("Position to hash: " + str(p))
-        print("Hash value: %i" % hash_value)
         return hash_value
 
     def get_info(self, ret):
@@ -43,9 +41,7 @@ class Database:
         the highest bit means win/lose (win is 0, lose is 1), other 7 bits is the remoteness
             for example: (10001110)_2 means: LOSE and 14 remoteness.
         '''
-        print("ret: %i" % ret)
         msg = "{0:b}".format(ret).zfill(8)
-        print("msg: " + msg)
         value = int(msg[-8])  # 0 for win, 1 for lose
         remoteness = int(msg[-7:], 2)
         return value_dict[value], remoteness
