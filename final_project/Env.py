@@ -1,28 +1,151 @@
-from final_project import Game
-
+from final_project import Game, Database
+from copy import deepcopy
 
 
 # Env holds game and dynamic variables (analysis, database later). GameGUI just interacts with Env.
 class Env:
-    def __init__(self, game_name, board_row, board_col):
+    def __init__(self, board_row, board_col):
+        self.board_row = board_row
+        self.board_col = board_col
         self.game = None
-        self.players = [0, 0]
+        self.turn = None
+        self.players = None
         self.database = None
+        self.curr_position = None
+        # prediction:
+        #   {"move": {"[move_row, move_col]": [value, remoteness], ...},
+        #    "delete": {"[move_row, move_col]": [{"[delete_row, delete_col]": [value, remoteness], ...}], ...}
+        #   }
+        self.prediction = False
+
+        self.restart()
+
+    def restart(self):
         self.turn = [0, 0]
-
-        # Change: following code executes the function of previous "create_game" function.
-        if game_name == "Isolation":
-            self.game = Game.Game(board_row=board_row, board_col=board_col)    # TODO: handle start_player
-
+        self.players = []
+        self.database = None
+        self.game = Game.Game(board_row=self.board_row, board_col=self.board_col)  # TODO: handle start_player
         self.curr_position = self.game.init_position
-        self.database = Database()    # TODO: finish database API
+        self.database = Database.Database(row=self.board_row, col=self.board_col)
 
     def add_player(self, is_human):    # TODO: human name
-        if is_human:
-            name = "human"
-        else:
-            name = "computer"
-        self.players.append(Player(name = name, is_human=is_human))
+            if is_human:
+                name = "human"
+            else:
+                name = "computer"
+            self.players.append(Player(name = name, is_human=is_human))
+
+    def predict(self, curr_p, turn, valid_moves):
+        current_value, current_remoteness = self.database.lookup(curr_p)
+        info = {}
+        prediction = {"move":{}, "delete":{}}
+        #valid_moves = self.game.gen_move(curr_p, turn)
+        for move in valid_moves:
+            print("valid_moves")
+            print(valid_moves)
+            position = self.game.do_move(p=curr_p, m=move, turn=turn)
+            print(position)
+            print("Turn: " + str(turn))
+            turn_next = self.next_turn(turn)
+            valid_deletes = self.game.gen_move(position, turn_next)
+            value_list = []
+            remoteness_list = []
+            for delete in valid_deletes:
+                print("valid_deletes")
+                print(valid_deletes)
+                print(move)
+                print("Turn_next: " + str(turn_next))
+                final_position = self.game.do_move(p=position, m=delete, turn=turn_next)
+                value, remoteness = self.database.lookup(final_position)
+                value_list.append(value)
+                remoteness_list.append(remoteness)
+            info[str(move)] = [valid_deletes, value_list, remoteness_list]
+
+        # get "move" step prediction
+        for move in info:
+            valid_deletes, value_list, remoteness_list = info[move]
+            if "LOSE" in value_list:  # this move has LOSE position for opponent, this move is WIN for me
+                # choose LOSE smallest remoteness
+                index_lose = [i for i, value in enumerate(value_list) if value == "LOSE"]
+                min_remoteness = max(remoteness_list)
+                for index in index_lose:
+                    if min_remoteness >= remoteness_list[index]:
+                        min_remoteness = remoteness_list[index]
+                prediction["move"][move] = ["WIN", min_remoteness + 1]
+
+            else:  # this move leads to all WIN, this move is LOSE for me
+                # choose WIN largest remoteness
+                index_max = remoteness_list.index(max(remoteness_list))
+                prediction["move"][move] = ["LOSE", remoteness_list[index_max] + 1]
+
+        # get "delete" step prediction
+        prediction["delete"] = info
+
+        return prediction
+
+
+    def gen_best_position(self, curr_p, turn):  # return position(list), value("WIN" or "LOSE"), remoteness(int)
+        current_value, current_remoteness = self.database.lookup(curr_p)
+        position_list = []
+        value_list = []
+        remoteness_list = []
+        valid_moves = self.game.gen_move(curr_p, turn)
+        for move in valid_moves:
+            print("valid_moves")
+            print(valid_moves)
+            position = self.game.do_move(p=curr_p, m=move, turn=turn)
+            print(position)
+            print("Turn: " + str(turn))
+            turn_next = self.next_turn(turn)
+            valid_deletes = self.game.gen_move(position, turn_next)
+            for delete in valid_deletes:
+                print("valid_deletes")
+                print(valid_deletes)
+                print(move)
+                print("Turn_next: " + str(turn_next))
+                final_position = self.game.do_move(p=position, m=delete, turn=turn_next)
+                value, remoteness = self.database.lookup(final_position)
+                position_list.append(final_position)
+                value_list.append(value)
+                remoteness_list.append(remoteness)
+
+        if current_value == "LOSE":
+            index_max = remoteness_list.index(max(remoteness_list))
+            print("At LOSE position: ")
+            print(position_list, value_list, remoteness_list)
+            return position_list[index_max], value_list[index_max], remoteness_list[index_max]
+        elif current_value == "WIN":
+            index_lose = [i for i, value in enumerate(value_list) if value == "LOSE"]
+            min_remoteness = max(remoteness_list)
+            print("position_list")
+            print(position_list)
+            print("value_list")
+            print(value_list)
+            print("index_lose")
+            print(index_lose)
+            print("remoteness_list")
+            print(remoteness_list)
+
+            for index in index_lose:
+                if min_remoteness >= remoteness_list[index]:
+                    min_position = position_list[index]
+                    min_value = value_list[index]
+                    min_remoteness = remoteness_list[index]
+            return min_position, min_value, min_remoteness
+
+    def next_turn(self, turn):
+        next_turn = deepcopy(turn)
+        if turn[0] == 0 and turn[1] == 0:
+            next_turn[1] = 1
+        elif turn[0] == 0 and turn[1] == 1:
+            next_turn[0] = 1
+            next_turn[1] = 0
+        elif turn[0] == 1 and turn[1] == 0:
+            next_turn[1] = 1
+        elif turn[0] == 1 and turn[1] == 1:
+            next_turn[0] = 0
+            next_turn[1] = 0
+        return next_turn
 
 class Player:
     def __init__(self, name, is_human):
@@ -51,19 +174,10 @@ class Player:
             print("Then computer moves %i." % m)
         env.curr_position = env.game.do_move(env.curr_position, m)
 
-    def gen_best_move(self, env):
-        pass
-
-class Database:
-    def __init__(self):
-        pass
-
-    def solve(self, position):
-        return []
 
 if __name__ == '__main__':
 
-    main_env = Env(game_name='Isolation')
+    main_env = Env()
     '''
     # Start a game with one human and one computer (human first).
     if args.mode == "pvc":
