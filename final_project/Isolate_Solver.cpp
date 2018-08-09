@@ -43,13 +43,13 @@ typedef pair<pii, pii> Move;
 typedef pair<int8, int8> pcc;
 
 // Following are the game parameters
-#define N 5
-#define M 5
+#define N 4
+#define M 4
 const int SIZE = N * M;
 const LL BASE[2] = { 1 << SIZE, (1 << SIZE) * SIZE };
 const LL TOTAL_POSITION = (1ll << SIZE) * SIZE * SIZE;
 const int dx[9] = { -1, -1, -1, 0, 0, 1, 1, 1 }, dy[9] = { -1, 0, 1, -1, 1, -1, 0, 1 };
-LL cnt_true_postion = 0;
+LL cnt_true_postion = 0, cnt_primitive_position = 0, cnt_win_position = 0, cnt_lose_position = 0, cnt_total_children;
 
 /*
 Use mix-based number to represent a position(game map + players location + turn)
@@ -273,16 +273,18 @@ int8 solve(Position p)
 	if (isPrimitive(p))
 	{
 		rel[p] = makeResult(LOSE, 0);
+		cnt_primitive_position++;
 		return rel[p];
 	}
 	//auto moves = genMove(p);
 	auto children = genChildren(p);
+	cnt_total_children += children.size();
 	int flag = LOSE, remote = 0;
 	for (auto new_p : children)
 	{
 		//Position new_p = doMove(p, m);
 		int8 rel = solve(new_p);
-		int curr_val = int(rel) >> 7, curr_rmt = int(rel) & ((1 << 7) - 1);
+		int curr_val = int(rel & (1<<7)) >> 7, curr_rmt = int(rel) & ((1 << 7) - 1);
 		if (flag == LOSE)
 			if (curr_val == LOSE)
 			{
@@ -297,6 +299,11 @@ int8 solve(Position p)
 	}
 	
 	rel[p] = makeResult(flag, remote + 1);
+	if (flag == WIN)
+		cnt_win_position++;
+	else
+		cnt_lose_position++;
+
 	return rel[p];
 }
 
@@ -306,6 +313,21 @@ void printFile()
 	FILE* fp;
 	fp = fopen(filename.c_str(), "wb");
 	fwrite(rel, sizeof(int8), TOTAL_POSITION, fp);
+}
+
+void printAnalysis()
+{
+	Position start_p = initStart();
+	int8 rel = solve(start_p);
+	int curr_val = int(rel & (1 << 7)) >> 7, curr_rmt = int(rel) & ((1 << 7) - 1);
+	string filename = "log_" + to_string(N) + "_" + to_string(M) + ".txt";
+	FILE* fp;
+	fp = fopen(filename.c_str(), "w");
+	fprintf(fp, "Upper bound is %I64d, actual position is %I64d\n", TOTAL_POSITION, cnt_true_postion);
+	fprintf(fp, "Start position's value is %d, remoteness is %d\n", curr_val, curr_rmt);
+	fprintf(fp, "Primitive position is %I64d\n", cnt_primitive_position);
+	fprintf(fp, "Win position is %I64d, Lose position is %I64d\n", cnt_win_position, cnt_lose_position);
+	fprintf(fp, "Average children is %.3f\n", (double)cnt_total_children / cnt_true_postion);
 }
 
 int main()
@@ -321,6 +343,7 @@ int main()
 	debug(sol_time - st_time);
 	//debug(rel.size());
 	//printJson();
+	printAnalysis();
 	printFile();
 	LL ed_time = clock();
 	debug(ed_time - st_time);
