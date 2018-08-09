@@ -43,8 +43,8 @@ typedef pair<pii, pii> Move;
 typedef pair<int8, int8> pcc;
 
 // Following are the game parameters
-#define N 4
-#define M 4
+#define N 5
+#define M 5
 const int SIZE = N * M;
 const LL BASE[2] = { 1 << SIZE, (1 << SIZE) * SIZE };
 const LL TOTAL_POSITION = (1ll << SIZE) * SIZE * SIZE;
@@ -65,7 +65,7 @@ then is two digit of base-(n*m), represent the location of player0 and player1
 */
 inline Position getPosition(int turn, Location l0, Location l1, GameBoard g)
 {
-	return (l0 << SIZE) + (l1 << SIZE) * SIZE + g;
+	return (l0 << SIZE) + (LL)(l1 << SIZE) * SIZE + g;
 }
 
 inline int count_one(unsigned int x)
@@ -150,7 +150,7 @@ bool check_Valid1(Position& p, pii c, Location l, Location& other)
 		return 0;
 	//debug(c.first);
 	//debug(c.second);
-	if (getState(p, l) != DELETED && other!= l)
+	if (getState(getGameBoard(p), l) != DELETED && other!= l)
 		return 1;
 	else
 		return 0;
@@ -162,7 +162,7 @@ bool check_Valid2(Position& p, Location l, Location& l0, Location& l1)
 		//return 0;
 	//debug(c.first);
 	//debug(c.second);
-	if (getState(p, l) != DELETED && l0 != l && l1 != l)
+	if (getState(getGameBoard(p), l) != DELETED && l0 != l && l1 != l)
 		return 1;
 	else
 		return 0;
@@ -335,6 +335,7 @@ int main()
 	LL st_time = clock();
 	rel = new int8[TOTAL_POSITION];
 	debug(TOTAL_POSITION);
+	size_t x;
 	memset(rel, -1, TOTAL_POSITION);
 	Position start_p = initStart();
 	cout << "start solving!" << endl;

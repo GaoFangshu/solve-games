@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import math
-from final_project import Env
+# from final_project import Env
+import Env
 from copy import deepcopy
 from time import sleep
 

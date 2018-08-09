@@ -1,4 +1,5 @@
-from final_project import Game, Database
+# from final_project import Game, Database
+import Game, Database
 from copy import deepcopy
 
 
@@ -177,7 +178,7 @@ class Player:
 
 if __name__ == '__main__':
 
-    main_env = Env()
+    main_env = Env(4, 4)
     '''
     # Start a game with one human and one computer (human first).
     if args.mode == "pvc":
