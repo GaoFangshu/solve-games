@@ -85,8 +85,9 @@ int main(int argc, char **argv)
 	LL p = get_p(argv[2]);
 	//debug(p);
 	FILE *fp = fopen(filename, "rb");
-	fseek(fp, (int)p, SEEK_SET);
-	//_fseeki64(fp, p, SEEK_SET);
+	// If you are not using VS, you should try fseek instead
+	//fseek(fp, (int)p, SEEK_SET);
+	_fseeki64(fp, p, SEEK_SET);
 	//lseek(fp, p, SEEK_SET);
 	//debug("after fseek");
 	fread(buf, 1, 1, fp);
