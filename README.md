@@ -1,5 +1,5 @@
 # solve-games :heavy_check_mark:
-*Solve games in computaional game theory class.*
+*Solve games in computational game theory class.*
 
 Homework are saved in [homework](./homework) folder. We solved small [Isolation](https://en.wikipedia.org/wiki/Isolation_(board_game)) board game as final demo in [final_project](./final_project) folder. Here are our presentation [slides](./final_project/demo.pdf) and [report](./final_project/report.pdf).
 
